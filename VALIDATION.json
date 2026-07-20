@@ -1,50 +1,67 @@
 {
-  "version": "2.0.0",
+  "version": "3.0.0",
+  "skills_count": 9,
   "skills": [
     {
       "skill": "legal-calculator",
-      "frontmatter_lines": 6,
-      "bytes": 3785,
-      "status": "no BOM, LF, name, description"
+      "type": "javascript",
+      "bytes": 4019,
+      "frontmatter_valid": true
     },
     {
       "skill": "legal-case-brief",
-      "frontmatter_lines": 6,
-      "bytes": 4108,
-      "status": "no BOM, LF, name, description"
+      "type": "text-only",
+      "bytes": 4982,
+      "frontmatter_valid": true
     },
     {
       "skill": "legal-contract-auditor",
-      "frontmatter_lines": 6,
-      "bytes": 6743,
-      "status": "no BOM, LF, name, description"
+      "type": "text-only",
+      "bytes": 7492,
+      "frontmatter_valid": true
     },
     {
       "skill": "legal-document-drafter",
-      "frontmatter_lines": 6,
-      "bytes": 3917,
-      "status": "no BOM, LF, name, description"
+      "type": "text-only",
+      "bytes": 4530,
+      "frontmatter_valid": true
     },
     {
       "skill": "legal-law-version-comparator",
-      "frontmatter_lines": 6,
-      "bytes": 3295,
-      "status": "no BOM, LF, name, description"
+      "type": "text-only",
+      "bytes": 4419,
+      "frontmatter_valid": true
     },
     {
       "skill": "legal-position-red-team",
-      "frontmatter_lines": 6,
-      "bytes": 3853,
-      "status": "no BOM, LF, name, description"
+      "type": "text-only",
+      "bytes": 4678,
+      "frontmatter_valid": true
     },
     {
       "skill": "legal-template-adapter",
-      "frontmatter_lines": 6,
-      "bytes": 4353,
-      "status": "no BOM, LF, name, description"
+      "type": "text-only",
+      "bytes": 4957,
+      "frontmatter_valid": true
+    },
+    {
+      "skill": "legal-text-simplifier",
+      "type": "text-only",
+      "bytes": 5433,
+      "frontmatter_valid": true
+    },
+    {
+      "skill": "russian-law-search",
+      "type": "javascript",
+      "bytes": 3061,
+      "frontmatter_valid": true
     }
   ],
-  "all_text_files_utf8_no_bom": true,
-  "all_text_files_lf": true,
-  "yaml_parser": "PyYAML"
+  "utf8_without_bom": true,
+  "lf_line_endings": true,
+  "notes": [
+    "Text-only skills explicitly prohibit unsupported analyze action",
+    "Online law search requires Tavily API key",
+    "Image OCR should be performed separately on iOS"
+  ]
 }

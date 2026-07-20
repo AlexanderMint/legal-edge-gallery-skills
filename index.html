@@ -6,21 +6,28 @@
   <title>Legal AI Edge Gallery Skills</title>
   <style>
     :root { color-scheme: light dark; }
-    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; max-width: 960px; margin: 0 auto; padding: 32px 20px 64px; line-height: 1.5; }
+    body { font-family: -apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; max-width: 980px; margin: 0 auto; padding: 32px 20px 64px; line-height: 1.5; }
     .notice { padding: 14px 16px; border: 1px solid currentColor; border-radius: 12px; }
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 16px; margin-top: 24px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit,minmax(280px,1fr)); gap: 16px; margin-top: 24px; }
     .card { border: 1px solid #7777; border-radius: 14px; padding: 18px; overflow: hidden; }
     h2 { font-size: 1.05rem; overflow-wrap: anywhere; }
     code { display: block; overflow-wrap: anywhere; font-size: .85rem; }
     .actions { display: flex; gap: 12px; margin-top: 16px; align-items: center; flex-wrap: wrap; }
-    button, a { font: inherit; }
+    button,a { font: inherit; }
   </style>
 </head>
 <body>
   <h1>Legal AI Edge Gallery Skills</h1>
-  <p class="notice">В приложении указывайте URL папки навыка, а не URL файла <code>SKILL.md</code>.</p>
+  <p class="notice">В приложение вставляйте URL папки. Для фото сначала используйте Ask Image, затем передайте распознанный текст в Agent Skills.</p>
   <section class="grid">
-    
+      <article class="card">
+        <h2>legal-text-simplifier</h2>
+        <code>https://alexandermint.github.io/legal-edge-gallery-skills/legal-text-simplifier/</code>
+        <div class="actions">
+          <button data-url="https://alexandermint.github.io/legal-edge-gallery-skills/legal-text-simplifier/">Copy skill URL</button>
+          <a href="legal-text-simplifier/SKILL.md">Open SKILL.md</a>
+        </div>
+      </article>
       <article class="card">
         <h2>legal-contract-auditor</h2>
         <code>https://alexandermint.github.io/legal-edge-gallery-skills/legal-contract-auditor/</code>
@@ -77,7 +84,14 @@
           <a href="legal-calculator/SKILL.md">Open SKILL.md</a>
         </div>
       </article>
-  </section>
+      <article class="card">
+        <h2>russian-law-search</h2>
+        <code>https://alexandermint.github.io/legal-edge-gallery-skills/russian-law-search/</code>
+        <div class="actions">
+          <button data-url="https://alexandermint.github.io/legal-edge-gallery-skills/russian-law-search/">Copy skill URL</button>
+          <a href="russian-law-search/SKILL.md">Open SKILL.md</a>
+        </div>
+      </article></section>
   <script>
     document.querySelectorAll("button[data-url]").forEach((button) => {
       button.addEventListener("click", async () => {
