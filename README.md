@@ -1,70 +1,105 @@
-# Legal Edge Gallery Skills
+# Legal AI Edge Gallery Skills
 
-Набор русскоязычных юридических Agent Skills для Google AI Edge Gallery. Основные сценарии работают локально и не отправляют документы во внешние сервисы. Исключение отсутствует: в данном репозитории нет сетевых API-вызовов.
+Набор русскоязычных автономных Agent Skills для Google AI Edge Gallery.
 
-## Состав
+## Навыки
 
-| Skill | Назначение | Интернет |
+| Каталог | Назначение | Интернет |
 |---|---|---|
-| `legal-contract-auditor` | Комплексная проверка договора | Не нужен |
+| `legal-contract-auditor` | Аудит предоставленного договора | Не нужен |
 | `legal-template-adapter` | Адаптация предоставленного шаблона | Не нужен |
 | `legal-case-brief` | Конспект материалов дела | Не нужен |
 | `legal-position-red-team` | Проверка слабых мест позиции | Не нужен |
-| `legal-document-drafter` | Проекты претензий, писем, протоколов и др. | Не нужен |
-| `legal-law-version-comparator` | Сравнение двух предоставленных редакций | Не нужен |
-| `legal-calculator` | Проценты, неустойка, суммы и календарные дни | Не нужен |
+| `legal-document-drafter` | Подготовка проектов документов | Не нужен |
+| `legal-law-version-comparator` | Сравнение двух редакций | Не нужен |
+| `legal-calculator` | Детерминированные расчёты через JavaScript | Не нужен |
+
+## Что исправлено в версии 2
+
+- YAML-frontmatter записан с отдельными строками `---`.
+- Все строковые значения YAML заключены в кавычки.
+- Все текстовые файлы имеют UTF-8 без BOM и переводы строк LF.
+- Добавлены `.gitattributes` и `.editorconfig`.
+- Добавлен валидатор структуры и YAML.
+- Добавлен GitHub Actions workflow.
+- В `metadata.homepage` указаны реальные страницы репозитория.
+- Описания навыков уточнены для более корректного автоматического выбора.
+- Калькулятор использует десятичные строки и `BigInt`, а не неточные денежные вычисления через обычный `Number`.
+
+## Публикация
+
+Загрузите **содержимое** этой папки в корень репозитория:
+
+```text
+AlexanderMint/legal-edge-gallery-skills
+```
+
+В GitHub откройте:
+
+```text
+Settings → Pages → Deploy from a branch
+```
+
+Выберите:
+
+```text
+Branch: main
+Folder: / (root)
+```
+
+Файл `.nojekyll` уже добавлен.
+
+После публикации проверьте в браузере:
+
+```text
+https://alexandermint.github.io/legal-edge-gallery-skills/legal-contract-auditor/SKILL.md
+```
+
+Файл должен открываться как исходный многострочный Markdown.
+
+В AI Edge Gallery указывайте URL папки:
+
+```text
+https://alexandermint.github.io/legal-edge-gallery-skills/legal-contract-auditor/
+```
+
+Не указывайте:
+
+```text
+https://alexandermint.github.io/legal-edge-gallery-skills/legal-contract-auditor/SKILL.md
+```
+
+и не используйте `raw.githubusercontent.com` для JavaScript-навыков.
+
+## Локальная проверка
+
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements-dev.txt
+python tools/validate_skills.py
+```
+
+Ожидаемый результат:
+
+```text
+Validation passed: 7 skills
+```
+
+## Рекомендации по включению навыков
+
+Не включайте все навыки одновременно на небольшой мобильной модели.
+
+- Проверка договора: `legal-contract-auditor`
+- Адаптация: `legal-template-adapter`, затем `legal-contract-auditor`
+- Материалы дела: `legal-case-brief`
+- Проверка позиции: `legal-position-red-team`
+- Подготовка проекта: `legal-document-drafter`
+- Сравнение редакций: `legal-law-version-comparator`
+- Расчёты: `legal-calculator`
 
 ## Ограничения
 
-Навыки не содержат актуальную базу законодательства и судебной практики. Они не должны:
-- подтверждать актуальность нормы по памяти модели;
-- придумывать статьи, судебные дела и цитаты;
-- заменять финальную проверку юристом;
-- самостоятельно получать сведения из ФНС, ФССП, КАД, ЕФРСБ или СМИ.
+Навыки не содержат актуальную базу законодательства и судебной практики. Они не должны самостоятельно подтверждать действующую редакцию нормы, существование судебного акта или актуальные сведения о контрагенте.
 
-Для проверки по законодательству передайте модели текст нужной нормы и дату редакции. Для сравнения закона передайте обе редакции.
-
-## Публикация через GitHub Pages
-
-1. Создайте публичный GitHub-репозиторий.
-2. Загрузите в корень всё содержимое этой папки, включая пустой `.nojekyll`.
-3. Замените `USERNAME` в `metadata.homepage` внутри каждого `SKILL.md` на имя GitHub-пользователя и название репозитория.
-4. В GitHub откройте **Settings → Pages**.
-5. В **Build and deployment** выберите **Deploy from a branch**.
-6. Укажите ветку `main` и каталог `/ (root)`.
-7. После публикации адрес навыка будет иметь вид:
-
-```text
-https://USERNAME.github.io/REPOSITORY/legal-contract-auditor/
-```
-
-В AI Edge Gallery выберите **Agent Skills → Skills → + → Load skill from URL** и вставьте URL папки навыка, без `SKILL.md`.
-
-Проверьте перед импортом, что в браузере открывается сырой файл:
-
-```text
-https://USERNAME.github.io/REPOSITORY/legal-contract-auditor/SKILL.md
-```
-
-## Локальный импорт на iPhone
-
-Если загрузка по URL не работает в установленной версии приложения:
-
-1. Откройте нужный `SKILL.md` в Safari.
-2. Сохраните его через **Поделиться → Сохранить в Файлы**.
-3. В AI Edge Gallery выберите импорт локального навыка.
-4. Для `legal-calculator` предпочтительнее URL через GitHub Pages, поскольку навыку нужен каталог `scripts/index.html`, а не только один Markdown-файл.
-
-## Использование
-
-Не включайте все навыки одновременно без необходимости. Для небольших мобильных моделей лучше активировать 1–3 релевантных навыка:
-
-- договор: `legal-contract-auditor`;
-- адаптация шаблона: `legal-template-adapter` + затем `legal-contract-auditor`;
-- судебное дело: `legal-case-brief` + `legal-position-red-team`;
-- расчёт: `legal-calculator`;
-- две редакции нормы: `legal-law-version-comparator`.
-
-## Проверка структуры
-
-Каждая папка имеет имя в kebab-case, совпадающее с полем `name` в YAML-frontmatter. JavaScript-навык содержит глобальную асинхронную функцию `window["ai_edge_gallery_get_result"]` и возвращает JSON с `result` либо `error`.
+Результат требует проверки квалифицированным юристом перед использованием.

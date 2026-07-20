@@ -1,0 +1,50 @@
+{
+  "version": "2.0.0",
+  "skills": [
+    {
+      "skill": "legal-calculator",
+      "frontmatter_lines": 6,
+      "bytes": 3785,
+      "status": "no BOM, LF, name, description"
+    },
+    {
+      "skill": "legal-case-brief",
+      "frontmatter_lines": 6,
+      "bytes": 4108,
+      "status": "no BOM, LF, name, description"
+    },
+    {
+      "skill": "legal-contract-auditor",
+      "frontmatter_lines": 6,
+      "bytes": 6743,
+      "status": "no BOM, LF, name, description"
+    },
+    {
+      "skill": "legal-document-drafter",
+      "frontmatter_lines": 6,
+      "bytes": 3917,
+      "status": "no BOM, LF, name, description"
+    },
+    {
+      "skill": "legal-law-version-comparator",
+      "frontmatter_lines": 6,
+      "bytes": 3295,
+      "status": "no BOM, LF, name, description"
+    },
+    {
+      "skill": "legal-position-red-team",
+      "frontmatter_lines": 6,
+      "bytes": 3853,
+      "status": "no BOM, LF, name, description"
+    },
+    {
+      "skill": "legal-template-adapter",
+      "frontmatter_lines": 6,
+      "bytes": 4353,
+      "status": "no BOM, LF, name, description"
+    }
+  ],
+  "all_text_files_utf8_no_bom": true,
+  "all_text_files_lf": true,
+  "yaml_parser": "PyYAML"
+}

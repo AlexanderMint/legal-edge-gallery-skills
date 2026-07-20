@@ -2,140 +2,250 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Legal Calculator</title>
 </head>
 <body>
 <script>
-(function () {
+(() => {
   "use strict";
 
-  function asFiniteNumber(value, field) {
-    const n = Number(value);
-    if (!Number.isFinite(n)) throw new Error(`Поле ${field} должно быть конечным числом`);
-    return n;
+  const POW10 = [1n];
+  for (let i = 1; i <= 18; i += 1) POW10.push(POW10[i - 1] * 10n);
+
+  function assertObject(value, field) {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+      throw new Error(`${field} должен быть объектом`);
+    }
   }
 
-  function asNonNegativeInteger(value, field) {
-    const n = asFiniteNumber(value, field);
-    if (!Number.isInteger(n) || n < 0) throw new Error(`Поле ${field} должно быть целым неотрицательным числом`);
-    return n;
+  function parseNonNegativeInteger(value, field) {
+    if (!Number.isInteger(value) || value < 0) {
+      throw new Error(`${field} должен быть целым неотрицательным числом`);
+    }
+    return value;
   }
 
-  function round2(n) {
-    return Math.round((n + Number.EPSILON) * 100) / 100;
+  function parseDecimal(value, field, maxScale = 8) {
+    const text = String(value).trim();
+    if (!/^\d+(?:\.\d+)?$/.test(text)) {
+      throw new Error(`${field} должен быть неотрицательной десятичной строкой с точкой`);
+    }
+
+    const [whole, fraction = ""] = text.split(".");
+    if (fraction.length > maxScale) {
+      throw new Error(`${field} содержит более ${maxScale} знаков после точки`);
+    }
+
+    const scale = fraction.length;
+    const digits = `${whole}${fraction}`.replace(/^0+(?=\d)/, "");
+    return {
+      value: BigInt(digits || "0"),
+      scale,
+      source: text
+    };
+  }
+
+  function align(a, b) {
+    const scale = Math.max(a.scale, b.scale);
+    return {
+      a: a.value * POW10[scale - a.scale],
+      b: b.value * POW10[scale - b.scale],
+      scale
+    };
+  }
+
+  function compareDecimal(a, b) {
+    const x = align(a, b);
+    return x.a === x.b ? 0 : (x.a < x.b ? -1 : 1);
+  }
+
+  function roundFractionHalfUp(numerator, denominator) {
+    if (denominator <= 0n) throw new Error("Внутренняя ошибка знаменателя");
+    const quotient = numerator / denominator;
+    const remainder = numerator % denominator;
+    return remainder * 2n >= denominator ? quotient + 1n : quotient;
+  }
+
+  function formatScaled(value, scale) {
+    const negative = value < 0n;
+    let digits = (negative ? -value : value).toString();
+
+    if (scale === 0) return `${negative ? "-" : ""}${digits}`;
+
+    digits = digits.padStart(scale + 1, "0");
+    const whole = digits.slice(0, -scale);
+    const fraction = digits.slice(-scale);
+    return `${negative ? "-" : ""}${whole}.${fraction}`;
+  }
+
+  function decimalToCents(decimal) {
+    if (decimal.scale <= 2) {
+      return decimal.value * POW10[2 - decimal.scale];
+    }
+    return roundFractionHalfUp(decimal.value, POW10[decimal.scale - 2]);
+  }
+
+  function centsToMoney(cents) {
+    return formatScaled(cents, 2);
+  }
+
+  function simpleInterest(input) {
+    const principal = parseDecimal(input.principal, "principal", 2);
+    const rate = parseDecimal(input.annual_rate_percent, "annual_rate_percent", 8);
+    const days = parseNonNegativeInteger(input.days, "days");
+    const basis = input.year_basis;
+
+    if (basis !== 365 && basis !== 366) {
+      throw new Error("year_basis должен быть 365 или 366");
+    }
+
+    const principalCents = decimalToCents(principal);
+    const numerator = principalCents * rate.value * BigInt(days);
+    const denominator = 100n * POW10[rate.scale] * BigInt(basis);
+    const resultCents = roundFractionHalfUp(numerator, denominator);
+
+    return {
+      operation: "simple_interest",
+      parameters: {
+        principal: principal.source,
+        annual_rate_percent: rate.source,
+        days,
+        year_basis: basis
+      },
+      formula: "principal × annual_rate_percent / 100 × days / year_basis",
+      result: centsToMoney(resultCents),
+      rounding: "До копеек, математическое округление половины вверх"
+    };
+  }
+
+  function penaltyPercentPerDay(input) {
+    const principal = parseDecimal(input.principal, "principal", 2);
+    const rate = parseDecimal(input.daily_rate_percent, "daily_rate_percent", 8);
+    const days = parseNonNegativeInteger(input.days, "days");
+    const principalCents = decimalToCents(principal);
+
+    const numerator = principalCents * rate.value * BigInt(days);
+    const denominator = 100n * POW10[rate.scale];
+    const beforeCapCents = roundFractionHalfUp(numerator, denominator);
+
+    let resultCents = beforeCapCents;
+    let capSource = null;
+
+    if (input.cap !== null && input.cap !== undefined && input.cap !== "") {
+      const cap = parseDecimal(input.cap, "cap", 2);
+      const capCents = decimalToCents(cap);
+      capSource = cap.source;
+      if (resultCents > capCents) resultCents = capCents;
+    }
+
+    return {
+      operation: "penalty_percent_per_day",
+      parameters: {
+        principal: principal.source,
+        daily_rate_percent: rate.source,
+        days,
+        cap: capSource
+      },
+      formula: "principal × daily_rate_percent / 100 × days; затем применяется cap",
+      result_before_cap: centsToMoney(beforeCapCents),
+      result: centsToMoney(resultCents),
+      rounding: "До копеек, математическое округление половины вверх"
+    };
+  }
+
+  function sumItems(input) {
+    if (!Array.isArray(input.items) || input.items.length === 0) {
+      throw new Error("items должен быть непустым массивом");
+    }
+
+    const items = input.items.map((item, index) => {
+      assertObject(item, `items[${index}]`);
+      const amount = parseDecimal(item.amount, `items[${index}].amount`, 2);
+      return {
+        label: String(item.label ?? `Позиция ${index + 1}`),
+        amount: amount.source,
+        cents: decimalToCents(amount)
+      };
+    });
+
+    const totalCents = items.reduce((sum, item) => sum + item.cents, 0n);
+
+    return {
+      operation: "sum_items",
+      items: items.map(({ label, amount }) => ({ label, amount })),
+      result: centsToMoney(totalCents)
+    };
   }
 
   function parseISODate(value, field) {
-    if (!/^\d{4}-\d{2}-\d{2}$/.test(String(value))) {
-      throw new Error(`Поле ${field} должно иметь формат YYYY-MM-DD`);
+    const text = String(value);
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+      throw new Error(`${field} должен иметь формат YYYY-MM-DD`);
     }
-    const [y, m, d] = String(value).split("-").map(Number);
-    const ts = Date.UTC(y, m - 1, d);
-    const dt = new Date(ts);
-    if (dt.getUTCFullYear() !== y || dt.getUTCMonth() !== m - 1 || dt.getUTCDate() !== d) {
-      throw new Error(`Поле ${field} содержит некорректную дату`);
+
+    const [year, month, day] = text.split("-").map(Number);
+    const timestamp = Date.UTC(year, month - 1, day);
+    const date = new Date(timestamp);
+
+    if (
+      date.getUTCFullYear() !== year ||
+      date.getUTCMonth() !== month - 1 ||
+      date.getUTCDate() !== day
+    ) {
+      throw new Error(`${field} содержит некорректную дату`);
     }
-    return ts;
+
+    return timestamp;
+  }
+
+  function calendarDays(input) {
+    const start = parseISODate(input.start_date, "start_date");
+    const end = parseISODate(input.end_date, "end_date");
+
+    if (end < start) throw new Error("end_date не может быть раньше start_date");
+
+    const difference = Math.floor((end - start) / 86400000);
+    let result;
+
+    switch (input.inclusion) {
+      case "exclude_start":
+        result = difference;
+        break;
+      case "include_both":
+        result = difference + 1;
+        break;
+      case "exclude_both":
+        result = Math.max(0, difference - 1);
+        break;
+      default:
+        throw new Error("inclusion должен быть exclude_start, include_both или exclude_both");
+    }
+
+    return {
+      operation: "calendar_days",
+      parameters: {
+        start_date: input.start_date,
+        end_date: input.end_date,
+        inclusion: input.inclusion
+      },
+      result_days: result,
+      warning: "Расчёт использует только календарные дни UTC и не учитывает производственный календарь"
+    };
   }
 
   function calculate(input) {
+    assertObject(input, "data");
+
     switch (input.operation) {
-      case "simple_interest": {
-        const principal = asFiniteNumber(input.principal, "principal");
-        const rate = asFiniteNumber(input.annual_rate_percent, "annual_rate_percent");
-        const days = asNonNegativeInteger(input.days, "days");
-        const basis = asFiniteNumber(input.year_basis, "year_basis");
-        if (basis !== 365 && basis !== 366) throw new Error("year_basis должен быть 365 или 366");
-        const raw = principal * (rate / 100) * days / basis;
-        return {
-          operation: input.operation,
-          formula: "principal * (annual_rate_percent / 100) * days / year_basis",
-          parameters: { principal, annual_rate_percent: rate, days, year_basis: basis },
-          raw_result: raw,
-          rounded_result: round2(raw)
-        };
-      }
-
-      case "penalty_percent_per_day": {
-        const principal = asFiniteNumber(input.principal, "principal");
-        const rate = asFiniteNumber(input.daily_rate_percent, "daily_rate_percent");
-        const days = asNonNegativeInteger(input.days, "days");
-        const rawBeforeCap = principal * (rate / 100) * days;
-        let result = rawBeforeCap;
-        let cap = null;
-        if (input.cap !== null && input.cap !== undefined && input.cap !== "") {
-          cap = asFiniteNumber(input.cap, "cap");
-          result = Math.min(result, cap);
-        }
-        return {
-          operation: input.operation,
-          formula: "min(principal * (daily_rate_percent / 100) * days, cap)",
-          parameters: { principal, daily_rate_percent: rate, days, cap },
-          raw_before_cap: rawBeforeCap,
-          raw_result: result,
-          rounded_result: round2(result)
-        };
-      }
-
-      case "sum_items": {
-        if (!Array.isArray(input.items) || input.items.length === 0) {
-          throw new Error("items должен быть непустым массивом");
-        }
-        const items = input.items.map((item, i) => ({
-          label: String(item.label ?? `Позиция ${i + 1}`),
-          amount: asFiniteNumber(item.amount, `items[${i}].amount`)
-        }));
-        const raw = items.reduce((sum, item) => sum + item.amount, 0);
-        return {
-          operation: input.operation,
-          items,
-          raw_result: raw,
-          rounded_result: round2(raw)
-        };
-      }
-
-      case "calendar_days": {
-        const start = parseISODate(input.start_date, "start_date");
-        const end = parseISODate(input.end_date, "end_date");
-        if (end < start) throw new Error("end_date не может быть раньше start_date");
-        const base = Math.floor((end - start) / 86400000);
-        let days;
-        switch (input.inclusion) {
-          case "exclude_start": days = base; break;
-          case "include_both": days = base + 1; break;
-          case "exclude_end": days = base; break;
-          default: throw new Error("inclusion должен быть exclude_start, include_both или exclude_end");
-        }
-        return {
-          operation: input.operation,
-          parameters: {
-            start_date: input.start_date,
-            end_date: input.end_date,
-            inclusion: input.inclusion
-          },
-          result_days: days
-        };
-      }
-
-      case "verify_expression": {
-        if (!Array.isArray(input.operands) || input.operands.length === 0) {
-          throw new Error("operands должен быть непустым массивом");
-        }
-        const values = input.operands.map((v, i) => asFiniteNumber(v, `operands[${i}]`));
-        let raw;
-        if (input.operator === "sum") raw = values.reduce((a, b) => a + b, 0);
-        else if (input.operator === "subtract_sequence") raw = values.slice(1).reduce((a, b) => a - b, values[0]);
-        else if (input.operator === "multiply") raw = values.reduce((a, b) => a * b, 1);
-        else throw new Error("operator должен быть sum, subtract_sequence или multiply");
-        return {
-          operation: input.operation,
-          operator: input.operator,
-          operands: values,
-          raw_result: raw,
-          rounded_result: round2(raw)
-        };
-      }
-
+      case "simple_interest":
+        return simpleInterest(input);
+      case "penalty_percent_per_day":
+        return penaltyPercentPerDay(input);
+      case "sum_items":
+        return sumItems(input);
+      case "calendar_days":
+        return calendarDays(input);
       default:
         throw new Error("Неизвестная операция");
     }
@@ -145,9 +255,11 @@
     try {
       const input = JSON.parse(data);
       return JSON.stringify({ result: calculate(input) });
-    } catch (e) {
-      console.error(e);
-      return JSON.stringify({ error: `Ошибка расчёта: ${e.message}` });
+    } catch (error) {
+      console.error(error);
+      return JSON.stringify({
+        error: `Ошибка расчёта: ${error instanceof Error ? error.message : String(error)}`
+      });
     }
   };
 })();
